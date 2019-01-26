@@ -1,0 +1,4 @@
+.ipynb_checkpoints
+__pycache__
+assignment1
+cifar-10-batches-py
