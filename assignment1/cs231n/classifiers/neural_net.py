@@ -70,13 +70,17 @@ class TwoLayerNet(object):
     N, D = X.shape
 
     # Compute the forward pass
-    scores = None
+
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+
+    relu = lambda x: np.maximum(x, 0)
+    h = relu(np.dot(X, W1) + b1) # linear(D => H) => ReLU
+    scores = np.dot(h, W2) + b2  # linear(H => C)
+
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -93,19 +97,41 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
+
+    e = np.exp(scores - np.max(scores, axis=1).reshape(-1, 1)) # stable exponential for scores
+    p = e / np.sum(e, axis=1).reshape(-1, 1) # Normalize exp
+
+    LL = -np.log(p[range(N), y])
+    loss = np.sum(LL) / N
+    loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
 
     # Backward pass: compute gradients
     grads = {}
+    grads["W1"] = np.zeros_like(W1)
+    grads["b1"] = np.zeros_like(b1)
+    grads["W2"] = np.zeros_like(W2)
+    grads["b2"] = np.zeros_like(b2)
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    # 1/N 처리 필요
+    p[np.arange(N), y] -= 1
+    dW2 = 1/N * np.dot(h.T, p)
+    db2 = 1/N * np.sum(p, axis=0)
+    dW1 = 1/N * np.dot(relu(X.T), np.dot(p, W2.T))
+    db1 = 1/N * np.sum(np.dot(p, W2.T), axis=0)
+    grads["W1"] += dW1
+    grads["W1"] += 1/2 * reg * W1
+    grads["b1"] += db1
+    grads["W2"] += dW2
+    grads["W2"] += 1/2 * reg * W2
+    grads["b2"] += db2
+
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
