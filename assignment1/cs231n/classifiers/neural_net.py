@@ -77,9 +77,10 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
 
-    relu = lambda x: np.maximum(x, 0)
-    h = relu(np.dot(X, W1) + b1) # linear(D => H) => ReLU
-    scores = np.dot(h, W2) + b2  # linear(H => C)
+    #relu = lambda x: np.maximum(x, 0)
+    h = np.dot(X, W1) + b1
+    a = np.maximum(h, 0) # linear(D => H) => ReLU
+    scores = np.dot(a, W2) + b2  # linear(H => C)
 
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -98,10 +99,10 @@ class TwoLayerNet(object):
     # classifier loss.                                                          #
     #############################################################################
 
-    e = np.exp(scores - np.max(scores, axis=1).reshape(-1, 1)) # stable exponential for scores
-    p = e / np.sum(e, axis=1).reshape(-1, 1) # Normalize exp
+    o = np.exp(scores - np.max(scores, axis=1).reshape(-1, 1)) # stable exponential for scores
+    p = o / np.sum(o, axis=1).reshape(-1, 1) # Normalize exp
 
-    LL = -np.log(p[range(N), y])
+    LL = -np.log(p[np.arange(N), y])
     loss = np.sum(LL) / N
     loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
@@ -112,8 +113,8 @@ class TwoLayerNet(object):
     grads = {}
     grads["W1"] = np.zeros_like(W1)
     grads["b1"] = np.zeros_like(b1)
-    grads["W2"] = np.zeros_like(W2)
-    grads["b2"] = np.zeros_like(b2)
+    #grads["W2"] = np.zeros_like(W2)
+    #grads["b2"] = np.zeros_like(b2)
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
@@ -121,16 +122,23 @@ class TwoLayerNet(object):
     #############################################################################
     # 1/N 처리 필요
     p[np.arange(N), y] -= 1
-    dW2 = 1/N * np.dot(h.T, p)
-    db2 = 1/N * np.sum(p, axis=0)
-    dW1 = 1/N * np.dot(relu(X.T), np.dot(p, W2.T))
-    db1 = 1/N * np.sum(np.dot(p, W2.T), axis=0)
-    grads["W1"] += dW1
-    grads["W1"] += 1/2 * reg * W1
-    grads["b1"] += db1
-    grads["W2"] += dW2
-    grads["W2"] += 1/2 * reg * W2
-    grads["b2"] += db2
+    dW2 = 1/N * np.dot(a.T, p) + 0.5 * reg * W2
+    db2 = np.mean(p, axis=0)
+
+    #dW1 = 1/N * np.dot(relu(X.T), np.dot(p, W2.T))
+    #db1 = 1/N * np.sum(np.dot(p, W2.T), axis=0)
+    da = np.dot(W2, p.T).T * (a>0)
+
+
+
+    grads["W2"] = dW2
+    grads["b2"] = db2
+    #grads["W1"] += dW1
+    #grads["W1"] += 1/2 * reg * W1
+    grads["b1"] = np.mean(da, axis=0)
+
+
+
 
     #############################################################################
     #                              END OF YOUR CODE                             #
