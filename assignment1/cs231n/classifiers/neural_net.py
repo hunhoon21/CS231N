@@ -111,8 +111,8 @@ class TwoLayerNet(object):
 
     # Backward pass: compute gradients
     grads = {}
-    grads["W1"] = np.zeros_like(W1)
-    grads["b1"] = np.zeros_like(b1)
+    #grads["W1"] = np.zeros_like(W1)
+    #grads["b1"] = np.zeros_like(b1)
     #grads["W2"] = np.zeros_like(W2)
     #grads["b2"] = np.zeros_like(b2)
     #############################################################################
@@ -122,19 +122,18 @@ class TwoLayerNet(object):
     #############################################################################
     # 1/N 처리 필요
     p[np.arange(N), y] -= 1
-    dW2 = 1/N * np.dot(a.T, p) + 0.5 * reg * W2
-    db2 = np.mean(p, axis=0)
+    #dW2 = 1/N * np.dot(a.T, p) + 0.5 * reg * W2
+    #db2 = np.mean(p, axis=0)
 
-    #dW1 = 1/N * np.dot(relu(X.T), np.dot(p, W2.T))
-    #db1 = 1/N * np.sum(np.dot(p, W2.T), axis=0)
-    da = np.dot(W2, p.T).T * (a>0)
+    da = np.dot(W2, p.T).T * (a > 0)
+
+    #dW1 = np.dot(X.T, da) + 0.5 * reg * W1
+    #db1 = np.mean(da, axis=0)
 
 
-
-    grads["W2"] = dW2
-    grads["b2"] = db2
-    #grads["W1"] += dW1
-    #grads["W1"] += 1/2 * reg * W1
+    grads["W2"] = 1/N * np.dot(a.T, p) + 0.5 * reg * W2
+    grads["b2"] = np.mean(p, axis=0)
+    grads["W1"] = np.dot(X.T, da) + 0.5 * reg * W1
     grads["b1"] = np.mean(da, axis=0)
 
 
