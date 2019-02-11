@@ -102,37 +102,38 @@ class TwoLayerNet(object):
     o = np.exp(scores - np.max(scores, axis=1).reshape(-1, 1)) # stable exponential for scores
     p = o / np.sum(o, axis=1).reshape(-1, 1) # Normalize exp
 
-    LL = -np.log(p[np.arange(N), y])
-    loss = np.sum(LL) / N
-    loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+    LL = -np.log(p[np.arange(N), y]) #get LogLikelihood
+    loss = np.sum(LL) / N # get p loss
+    loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2)) # get reg loss
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
 
     # Backward pass: compute gradients
     grads = {}
-    #grads["W1"] = np.zeros_like(W1)
-    #grads["b1"] = np.zeros_like(b1)
-    #grads["W2"] = np.zeros_like(W2)
-    #grads["b2"] = np.zeros_like(b2)
+
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
+
     # 1/N 처리 필요
-    p[np.arange(N), y] -= 1
+    #dp = p[:, y] - 1 # p-y
+    dp = np.array(p)
+    dp[np.arange(N), y] -= 1 # p-y
     #dW2 = 1/N * np.dot(a.T, p) + 0.5 * reg * W2
     #db2 = np.mean(p, axis=0)
 
-    da = np.dot(W2, p.T).T * (a > 0)
+    #da = np.dot(W2, p.T).T * (a > 0) #dL/dA
+    da = np.dot(dp, W2.T) * (a > 0)  # dL/dA
 
     #dW1 = np.dot(X.T, da) + 0.5 * reg * W1
     #db1 = np.mean(da, axis=0)
 
 
-    grads["W2"] = 1/N * np.dot(a.T, p) + 2 * reg * W2
-    grads["b2"] = np.mean(p, axis=0)
+    grads["W2"] = 1/N * np.dot(a.T, dp) + 2 * reg * W2
+    grads["b2"] = np.mean(dp, axis=0)
     grads["W1"] = 1/N * np.dot(X.T, da) + 2 * reg * W1
     grads["b1"] = np.mean(da, axis=0)
 
@@ -182,7 +183,8 @@ class TwoLayerNet(object):
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
 
-      batch_mask = np.random.choice(num_train, batch_size)
+      batch_mask = np.random.choice(num_train, batch_size) #미니배치 인덱스
+      #데이터 미니배치 화
       X_batch = X[batch_mask]
       y_batch = y[batch_mask]
 
@@ -201,6 +203,7 @@ class TwoLayerNet(object):
       # stored in the grads dictionary defined above.                         #
       #########################################################################
 
+      #가중치 갱신
       self.params["W2"] -= learning_rate * grads["W2"]
       self.params["b2"] -= learning_rate * grads["b2"]
       self.params["W1"] -= learning_rate * grads["W1"]
@@ -251,8 +254,8 @@ class TwoLayerNet(object):
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
 
-    scores = self.loss(X)
-    y_pred = np.argmax(scores, axis=1)
+    scores = self.loss(X) #스코어 구하기
+    y_pred = np.argmax(scores, axis=1) #y추정 결과 도출
 
     ###########################################################################
     #                              END OF YOUR CODE                           #
