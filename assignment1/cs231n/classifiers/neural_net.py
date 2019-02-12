@@ -126,7 +126,7 @@ class TwoLayerNet(object):
     #db2 = np.mean(p, axis=0)
 
     #da = np.dot(W2, p.T).T * (a > 0) #dL/dA
-    da = np.dot(dp, W2.T) * (a > 0)  # dL/dA
+    da = np.dot(dp, W2.T) * 1*(a > 0)  # dL/dA
 
     #dW1 = np.dot(X.T, da) + 0.5 * reg * W1
     #db1 = np.mean(da, axis=0)

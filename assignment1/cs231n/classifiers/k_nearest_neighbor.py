@@ -150,6 +150,9 @@ class KNearestNeighbor(object):
     """
     num_test = dists.shape[0]
     y_pred = np.zeros(num_test)
+
+    #closest_y를 밖에서 만들도록 하자.
+    #closest_y
     for i in range(num_test):
       # A list of length k storing the labels of the k nearest neighbors to
       # the ith test point.

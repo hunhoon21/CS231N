@@ -88,7 +88,7 @@ def svm_loss_vectorized(W, X, y, reg):
   #                             END OF YOUR CODE                              #
   #############################################################################
 
-  dmargin = 1 * (margin > 0)
+  dmargin = margin > 0
   dmargin[np.arange(num_X), y] -=  np.sum(dmargin, axis=1)
 
   #############################################################################
