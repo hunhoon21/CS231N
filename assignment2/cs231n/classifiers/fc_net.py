@@ -47,7 +47,12 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W1' and 'b1' and second layer weights #
         # and biases using the keys 'W2' and 'b2'.                                 #
         ############################################################################
-        pass
+
+        self.params["W1"] = np.random.normal(scale = weight_scale, size = (input_dim, hidden_dim))
+        self.params["b1"] = np.zeros(hidden_dim)
+        self.params["W2"] = np.random.normal(scale = weight_scale, size = (hidden_dim, num_classes))
+        self.params["b2"] = np.zeros(num_classes)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -73,11 +78,20 @@ class TwoLayerNet(object):
           names to gradients of the loss with respect to those parameters.
         """
         scores = None
+
+        N = X.shape[0]
+
+        W1, b1, W2, b2 = self.params["W1"], self.params["b1"], self.params["W2"], self.params["b2"]
+        reg = self.reg
+
         ############################################################################
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+
+        out, _ = affine_relu_forward(X, W1, b1)
+        scores, _ = affine_forward(out, W2, b2)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -97,7 +111,14 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+
+        stable_score = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+        p = stable_score / np.sum(stable_score, axis=1, keepdims=True)
+
+        LL = - np.log(p[np.arange(N), y])
+        loss = np.sum(LL) / N
+        loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
