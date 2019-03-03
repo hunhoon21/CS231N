@@ -227,7 +227,10 @@ class FullyConnectedNet(object):
         # pass of the second batch normalization layer, etc.
         self.bn_params = []
         if self.use_batchnorm:
-            self.bn_params = [{'mode': 'train'} for i in range(self.num_layers - 1)]
+            self.bn_params = [{'mode': 'train'} for i in range(1, self.num_layers)]
+            for i, hidden_dim in enumerate(hidden_dims, 1):
+                self.params["gamma"+str(i)] = np.ones(hidden_dim)
+                self.params["beta"+str(i)] = np.zeros(hidden_dim)
 
         # Cast all parameters to the correct datatype
         for k, v in self.params.items():
@@ -271,16 +274,32 @@ class FullyConnectedNet(object):
         caches = {}
         for i in range(1, self.num_layers+1):
             W, b = self.params["W"+str(i)], self.params["b"+str(i)]
-            if i == 1: # 처음
-                out, cache = affine_relu_forward(X, W, b)
-                caches[i] = cache
-            else:
-                if i == self.num_layers: # 끝
-                    scores, fc_cache = affine_forward(out, W, b)
-                    caches[i] = fc_cache
-                else: # 중간
-                    out, cache = affine_relu_forward(out, W, b)
+            if self.use_batchnorm:
+
+                if i == 1: # 처음
+                    gamma, beta, bn_param = self.params["gamma" + str(i)], self.params["beta" + str(i)], self.bn_params[i - 1]
+                    out, cache = affine_bn_relu_forward(X, W, b, gamma, beta, bn_param)
                     caches[i] = cache
+                else:
+                    if i == self.num_layers: # 끝
+                        scores, fc_cache = affine_forward(out, W, b)
+                        caches[i] = fc_cache
+                    else: # 중간
+                        gamma, beta, bn_param = self.params["gamma" + str(i)], self.params["beta" + str(i)], self.bn_params[i - 1]
+                        out, cache = affine_bn_relu_forward(out, W, b, gamma, beta, bn_param)
+                        caches[i] = cache
+
+            else:
+                if i == 1: # 처음
+                    out, cache = affine_relu_forward(X, W, b)
+                    caches[i] = cache
+                else:
+                    if i == self.num_layers: # 끝
+                        scores, fc_cache = affine_forward(out, W, b)
+                        caches[i] = fc_cache
+                    else: # 중간
+                        out, cache = affine_relu_forward(out, W, b)
+                        caches[i] = cache
 
 
         ############################################################################
@@ -309,15 +328,27 @@ class FullyConnectedNet(object):
         loss, dx = softmax_loss(scores, y)
 
         for i in range(self.num_layers, 0, -1):
-            if i == self.num_layers: # 처음
-                dx, grads["W"+str(i)], grads["b"+str(i)] = affine_backward(dx, caches[i])
+            if self.use_batchnorm:
+                if i == self.num_layers: # 처음
+                    dx, grads["W"+str(i)], grads["b"+str(i)] = affine_backward(dx, caches[i])
+
+                else:
+                    if i == 1: # 끝
+                        _, grads["W" + str(i)], grads["b" + str(i)], grads['gamma'+str(i)], grads['beta'+str(i)] = affine_bn_relu_backward(dx, caches[i])
+
+                    else: # 중간
+                        dx, grads["W"+str(i)], grads["b"+str(i)], grads['gamma'+str(i)], grads['beta'+str(i)] = affine_bn_relu_backward(dx, caches[i])
 
             else:
-                if i == 1: # 끝
-                    _, grads["W" + str(i)], grads["b" + str(i)] = affine_relu_backward(dx, caches[i])
+                if i == self.num_layers: # 처음
+                    dx, grads["W"+str(i)], grads["b"+str(i)] = affine_backward(dx, caches[i])
 
-                else: # 중간
-                dx, grads["W"+str(i)], grads["b"+str(i)] = affine_relu_backward(dx, caches[i])
+                else:
+                    if i == 1: # 끝
+                        _, grads["W" + str(i)], grads["b" + str(i)] = affine_relu_backward(dx, caches[i])
+
+                    else: # 중간
+                        dx, grads["W"+str(i)], grads["b"+str(i)] = affine_relu_backward(dx, caches[i])
 
         for i in range(1, self.num_layers + 1):
             W = self.params["W"+str(i)]

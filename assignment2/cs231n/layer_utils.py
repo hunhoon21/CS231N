@@ -31,6 +31,29 @@ def affine_relu_backward(dout, cache):
     return dx, dw, db
 
 
+# Batch-Normalization Layer Utilities
+def affine_bn_relu_forward(x, w, b, gamma, beta, bn_param):
+    """
+    Convenience layer that performs an affine transform, batch normalization and ReLU
+    """
+    out1, fc_cache = affine_forward(x, w, b)
+    out2, bn_cache = batchnorm_forward(out1, gamma, beta, bn_param)
+    out3, relu_cache = relu_forward(out2)
+    cache = (fc_cache, bn_cache, relu_cache)
+    return out3, cache
+
+
+def affine_bn_relu_backward(dout, cache):
+    """
+        Backward pass for the affine-bn-relu convenience layer
+    """
+    fc_cache, bn_cache, relu_cache = cache
+    d1 = relu_backward(dout, relu_cache)
+    d2, dgamma, dbeta = batchnorm_backward(d1, bn_cache)
+    d3, dw, db = affine_backward(d2, fc_cache)
+    return d3, dw, db, dgamma, dbeta
+
+
 def conv_relu_forward(x, w, b, conv_param):
     """
     A convenience layer that performs a convolution followed by a ReLU.
