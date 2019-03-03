@@ -272,6 +272,7 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         caches = {}
+        masks = {}
         for i in range(1, self.num_layers+1):
             W, b = self.params["W"+str(i)], self.params["b"+str(i)]
             if self.use_batchnorm:
@@ -280,6 +281,9 @@ class FullyConnectedNet(object):
                     gamma, beta, bn_param = self.params["gamma" + str(i)], self.params["beta" + str(i)], self.bn_params[i - 1]
                     out, cache = affine_bn_relu_forward(X, W, b, gamma, beta, bn_param)
                     caches[i] = cache
+                    if self.use_dropout:
+                        out, mask = dropout_forward(out, self.dropout_param)
+                        masks[i] = mask
                 else:
                     if i == self.num_layers: # 끝
                         scores, fc_cache = affine_forward(out, W, b)
@@ -288,11 +292,19 @@ class FullyConnectedNet(object):
                         gamma, beta, bn_param = self.params["gamma" + str(i)], self.params["beta" + str(i)], self.bn_params[i - 1]
                         out, cache = affine_bn_relu_forward(out, W, b, gamma, beta, bn_param)
                         caches[i] = cache
+                        if self.use_dropout:
+                            out, mask = dropout_forward(out, self.dropout_param)
+                            masks[i] = mask
+
+
 
             else:
                 if i == 1: # 처음
                     out, cache = affine_relu_forward(X, W, b)
                     caches[i] = cache
+                    if self.use_dropout:
+                        out, mask = dropout_forward(out, self.dropout_param)
+                        masks[i] = mask
                 else:
                     if i == self.num_layers: # 끝
                         scores, fc_cache = affine_forward(out, W, b)
@@ -300,6 +312,9 @@ class FullyConnectedNet(object):
                     else: # 중간
                         out, cache = affine_relu_forward(out, W, b)
                         caches[i] = cache
+                        if self.use_dropout:
+                            out, mask = dropout_forward(out, self.dropout_param)
+                            masks[i] = mask
 
 
         ############################################################################
@@ -342,13 +357,16 @@ class FullyConnectedNet(object):
             else:
                 if i == self.num_layers: # 처음
                     dx, grads["W"+str(i)], grads["b"+str(i)] = affine_backward(dx, caches[i])
-
+                    if self.use_dropout:
+                        dx = dropout_backward(dx, masks[i-1])
                 else:
                     if i == 1: # 끝
                         _, grads["W" + str(i)], grads["b" + str(i)] = affine_relu_backward(dx, caches[i])
 
                     else: # 중간
                         dx, grads["W"+str(i)], grads["b"+str(i)] = affine_relu_backward(dx, caches[i])
+                        if self.use_dropout:
+                            dx = dropout_backward(dx, masks[i-1])
 
         for i in range(1, self.num_layers + 1):
             W = self.params["W"+str(i)]
